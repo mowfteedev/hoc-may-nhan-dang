@@ -1,3 +1,4 @@
+from math import prod
 import pandas as pd
 
 # ---------- Đọc & Tiền xử lý dữ liệu ----------
@@ -13,15 +14,11 @@ def tien_nghiem(h):
 
 
 def dac_trung(a, v, h):
-    sub = df[df[target] == h]
-    return (sub[a] == v).sum() / len(sub)
+    return ((df[target] == h) & (df[a] == v)).sum() / (df[target] == h).sum()
 
 
 def kha_nang(D, h):
-    prod = 1.0
-    for a in attrs:
-        prod *= dac_trung(a, D[a], h)
-    return prod
+    return prod(dac_trung(a, D[a], h) for a in attrs)
 
 
 def xac_suat_mau(D):
@@ -30,11 +27,8 @@ def xac_suat_mau(D):
 
 # ---------- 2. Quyết định MAP: h_MAP = argmax P(h | D) ----------
 def hau_nghiem(D):
-    classes = list(df[target].unique())
-    mau_so = xac_suat_mau(D)
-    post = {f"h{j}": (kha_nang(D, h) * tien_nghiem(h)) / mau_so for j, h in enumerate(classes, 1)}
-    best = max(post, key=post.get)
-    return best, post
+    post = {f"h{j}": (kha_nang(D, h) * tien_nghiem(h)) / xac_suat_mau(D) for j, h in enumerate(df[target].unique(), 1)}
+    return max(post, key=post.get), post
 
 
 # ---------- Chạy thử nghiệm ----------
