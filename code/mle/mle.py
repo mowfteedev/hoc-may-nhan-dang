@@ -1,44 +1,42 @@
 import pandas as pd
 
-# ---------- Dữ liệu ----------
+# ---------- Đọc & Tiền xử lý dữ liệu ----------
 DATA_FILE = "data/datatemplate.csv"
-df = pd.read_csv(DATA_FILE).dropna()
-target, attrs = df.columns[-1], list(df.columns[:-1])
+df = pd.read_csv(DATA_FILE).dropna()   # Đọc bảng và loại bỏ dòng thiếu dữ liệu
+# df = df.drop(columns=["ID"])          # Bỏ cột ID/STT nếu có
+
+target = df.columns[-1]                 # Cột cuối cùng là nhãn (không gian giả thuyết H)
+attrs = list(df.columns[:-1])           # Các thuộc tính quan sát
 
 
-# ---------- 1. Khả năng Likelihood P(d_i | h) ----------
-def P_di_h(a, v, h):
+# ---------- Ước lượng Likelihood: P(d_i = v | h) ----------
+# Likelihood của biến rời rạc = số lần xuất hiện / tổng số mẫu của giả thuyết h
+def likelihood(a, v, h):
     sub = df[df[target] == h]
     return (sub[a] == v).sum() / len(sub)
 
 
-# ---------- 2. Quyết định MLE: h_ML = argmax Π P(d_i | h) ----------
-def mle_predict(D, verbose=False):
+# ---------- Quyết định MLE: h_ML = argmax P(D|h) ----------
+def mle_predict(D):
     L = {}
     for h in df[target].unique():
         s = 1.0
-        if verbose: print(f"Giả thuyết {h}:")
+        print(f"\nGiả thuyết {h}:")
         for a in attrs:
-            p = P_di_h(a, D[a], h)
-            if verbose: print(f"   P({a}={D[a]} | {h}) = {p:.4f}")
-            s *= p
+            p = likelihood(a, D[a], h)
+            print(f"   P({a}={D[a]} | {h}) = {p:.4f}")
+            s *= p                                   # nhân dồn likelihood: P(D|h)
         L[h] = s
-        if verbose: print(f"   => L({h}) = P(D|{h}) = Π P(d_i|{h}) = {s:.6f}\n")
-    return max(L, key=L.get), L
+        print(f"   => L({h}) = P(D|{h}) = Π P(d_i|{h}) = {s:.6f}")
+    best = max(L, key=L.get)                         # argmax likelihood
+    return best, L
 
 
-# ---------- Chạy & Đánh giá ----------
-print("===== 1. CHI TIẾT TÍNH TOÁN LIKELIHOOD CHO MẪU D =====")
+# ---------- Chạy ----------
 D_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
-print(f"Mẫu quan sát D: {D_mau}\n")
-best, L = mle_predict(D_mau, verbose=True)
+best, L = mle_predict(D_mau)
 
-print("===== 2. KẾT QUẢ ĐÁNH GIÁ & QUYẾT ĐỊNH =====")
+print("\n===== KẾT QUẢ =====")
 for h, v in L.items():
-    print(f"L({h}) = P(D | {h}) = {v:.6f}")
-
-pred = df.apply(lambda r: mle_predict(r)[0], axis=1)
-acc = (pred == df[target]).mean()
-correct = (pred == df[target]).sum()
-print(f"\nĐộ chính xác trên tập huấn luyện: {acc:.2%} ({correct}/{len(df)} mẫu đúng)")
-print(f"=> Quyết định MLE cho mẫu D (h_ML): {best}")
+    print(f"L({h}) = {v:.6f}")
+print("Quyết định MLE (h_ML):", best)
