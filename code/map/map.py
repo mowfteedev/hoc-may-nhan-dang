@@ -7,7 +7,6 @@ df = pd.read_csv(DATA_FILE).dropna()   # Đọc bảng và loại bỏ dòng thi
 
 target = df.columns[-1]                 # Cột cuối cùng là nhãn (không gian giả thuyết H)
 attrs = list(df.columns[:-1])           # Các thuộc tính quan sát
-ALPHA = 0                               # 0: tính tay như sách; 1: làm trơn Laplace (tránh xác suất 0)
 
 
 # ---------- Xác suất tiên nghiệm P(h) ----------
@@ -19,8 +18,7 @@ def prior(h):
 # = (số mẫu của giả thuyết h có thuộc tính a = v) / (số mẫu của giả thuyết h)
 def likelihood(a, v, h):
     sub = df[df[target] == h]
-    k = df[a].nunique()                 # số giá trị của thuộc tính (dùng cho Laplace)
-    return ((sub[a] == v).sum() + ALPHA) / (len(sub) + ALPHA * k)
+    return (sub[a] == v).sum() / len(sub)
 
 
 # ---------- Quyết định MAP: h_MAP = argmax P(D|h) * P(h) ----------

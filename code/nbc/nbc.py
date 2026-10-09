@@ -7,8 +7,6 @@ df = pd.read_csv(DATA_FILE).dropna()   # Đọc bảng và loại bỏ dòng thi
 
 target = df.columns[-1]                 # Cột cuối cùng là nhãn cần dự đoán (lớp c)
 attrs = list(df.columns[:-1])           # Các thuộc tính đặc trưng (features)
-values = {a: df[a].unique() for a in attrs}   # Tập giá trị có thể của từng thuộc tính
-ALPHA = 0                               # 0: tính tay như slide; 1: làm trơn Laplace (tránh xác suất 0)
 
 
 # ---------- Xác suất tiên nghiệm: P(c) ----------
@@ -18,11 +16,10 @@ def prior(c):
 
 
 # ---------- Khả năng (Likelihood): P(a = v | c) ----------
-# = (số mẫu lớp c có thuộc tính a = v + ALPHA) / (số mẫu lớp c + ALPHA * số giá trị của a)
+# = (số mẫu lớp c có thuộc tính a = v) / (số mẫu lớp c)
 def likelihood(a, v, c):
     sub = df[df[target] == c]
-    k = len(values[a])
-    return ((sub[a] == v).sum() + ALPHA) / (len(sub) + ALPHA * k)
+    return (sub[a] == v).sum() / len(sub)
 
 
 # ---------- Xác suất biên (Evidence): P(a = v) ----------
