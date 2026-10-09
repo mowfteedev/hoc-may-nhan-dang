@@ -27,12 +27,12 @@ def map_predict(D):
     for h in df[target].unique():
         s = prior(h)
         print(f"\nGiả thuyết {h}: P({h}) = {s:.4f}")
-        for a in attrs:
+        for i, a in enumerate(attrs, 1):
             p = likelihood(a, D[a], h)
-            print(f"   P({a}={D[a]} | {h}) = {p:.4f}")
+            print(f"   P(D{i} | {h}) = {p:.4f}")
             s *= p                                   # nhân dồn: P(D|h) * P(h)
         score[h] = s
-        print(f"   => P({h}) * Π P(d_i|{h}) = {s:.6f}")
+        print(f"   => P({h}) * Π P(D_i|{h}) = {s:.6f}")
 
     total = sum(score.values())
     post = {h: s / total for h, s in score.items()}  # chuẩn hóa thành P(h | D)
@@ -42,6 +42,7 @@ def map_predict(D):
 
 # ---------- Chạy ----------
 D_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
+print(f"D = {D_mau}")
 best, post = map_predict(D_mau)
 
 print("\n===== KẾT QUẢ =====")
