@@ -22,12 +22,8 @@ def kha_nang(D, h):
 
 # ---------- 2. Quyết định MLE: h_ML = argmax P(D | h) ----------
 def mle(D):
-    L, labels = {}, {}
-    for j, h in enumerate(df[target].unique(), 1):
-        L[f"h{j}"] = kha_nang(D, h)
-        labels[f"h{j}"] = h
-    best = max(L, key=L.get)
-    return f"{best} = {labels[best]}", L
+    L = {h: kha_nang(D, h) for h in df[target].unique()}
+    return max(L, key=L.get), L
 
 
 # ---------- Chạy thử nghiệm ----------
@@ -36,7 +32,8 @@ print(f"D = {D_mau}")
 
 best, L = mle(D_mau)
 print("Completed!\n" + "-" * 35)
-for h, p in L.items():
-    print(f"P(D|{h}) = {p:.4f}")
+for j, (h, p) in enumerate(L.items(), 1):
+    print(f"P(D|h{j}) = {p:.4f}")
 print("-" * 35)
-print(f"=> Quyết định MLE (h_ML): {best}")
+j_best = list(L).index(best) + 1
+print(f"=> Quyết định MLE (h_ML): h{j_best} = {best}")

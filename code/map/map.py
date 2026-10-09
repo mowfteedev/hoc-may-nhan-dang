@@ -31,13 +31,8 @@ def xac_suat_mau(D):
 # ---------- 2. Quyết định MAP: h_MAP = argmax P(h | D) ----------
 def hau_nghiem(D):
     mau_so = xac_suat_mau(D)
-    post, labels = {}, {}
-    for j, h in enumerate(df[target].unique(), 1):
-        tu_so = kha_nang(D, h) * tien_nghiem(h)
-        post[f"h{j}"] = tu_so / mau_so
-        labels[f"h{j}"] = h
-    best = max(post, key=post.get)
-    return f"{best} = {labels[best]}", post
+    post = {h: (kha_nang(D, h) * tien_nghiem(h)) / mau_so for h in df[target].unique()}
+    return max(post, key=post.get), post
 
 
 # ---------- Chạy thử nghiệm ----------
@@ -46,7 +41,8 @@ print(f"D = {D_mau}")
 
 best, post = hau_nghiem(D_mau)
 print("Completed!\n" + "-" * 35)
-for h, p in post.items():
-    print(f"P({h}|D) = {p:.4f}")
+for j, (h, p) in enumerate(post.items(), 1):
+    print(f"P(h{j}|D) = {p:.4f}")
 print("-" * 35)
-print(f"=> Quyết định MAP (h_MAP): {best}")
+j_best = list(post).index(best) + 1
+print(f"=> Quyết định MAP (h_MAP): h{j_best} = {best}")
