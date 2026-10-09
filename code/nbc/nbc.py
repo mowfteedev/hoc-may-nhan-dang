@@ -1,11 +1,13 @@
 import pandas as pd
 
-# ---------- Đọc dữ liệu ----------
-df = pd.read_csv("data.csv").dropna()
-# df = df.drop(columns=["ID"])          # bỏ cột ID/STT nếu có
+# ---------- Đọc & Tiền xử lý dữ liệu ----------
+DATA_FILE = "data/datatemplate.csv"
+df = pd.read_csv(DATA_FILE).dropna()   # Đọc bảng và loại bỏ dòng thiếu dữ liệu
+# df = df.drop(columns=["ID"])          # Bỏ cột ID/STT nếu có
 
-target = df.columns[-1]                 # cột cuối là nhãn (loại A, ví dụ Banana/Orange/Other)
-attrs = list(df.columns[:-1])           # các tính chất B1, B2, ..., Bn
+target = df.columns[-1]                 # Cột cuối cùng là nhãn cần dự đoán (lớp A)
+attrs = list(df.columns[:-1])           # Các tính chất B1, B2, ..., Bn
+values = {a: df[a].unique() for a in attrs}   # Mọi giá trị có thể của từng thuộc tính
 ALPHA = 0                               # 0: tính tay như slide; 1: làm trơn Laplace (tránh xác suất 0)
 
 
@@ -15,11 +17,11 @@ def P_A(A):
     return (df[target] == A).mean()
 
 
-# ---------- P(Bi | A): xác suất tính chất Bi = v khi biết lớp A ----------
+# ---------- P(Bi | A): xác suất Bi = v khi biết lớp A ----------
 # = (số mẫu A có Bi = v + ALPHA) / (số mẫu A + ALPHA * số giá trị của Bi)
 def P_B_A(b, v, A):
     sub = df[df[target] == A]
-    k = df[b].nunique()
+    k = len(values[b])
     return ((sub[b] == v).sum() + ALPHA) / (len(sub) + ALPHA * k)
 
 
@@ -41,29 +43,29 @@ def naive_bayes(x, verbose=False):
     if verbose:
         print(f"=> Mẫu số = {mau_so:.4f}\n")
 
-    # Tử số của từng lớp rồi chia cho mẫu số
+    # Tử số của từng lớp, rồi chia cho mẫu số
     tu_so, ket_qua = {}, {}
     for A in df[target].unique():
-        t = P_A(A)
+        t = P_A(A)                                    # bắt đầu từ P(A)
         if verbose:
             print(f"A = {A}: P({A}) = {t:.4f}")
         for b in attrs:
             p = P_B_A(b, x[b], A)
             if verbose:
                 print(f"   P({b}={x[b]} | {A}) = {p:.4f}")
-            t *= p
+            t *= p                                    # nhân dồn P(Bi | A)
         tu_so[A] = t
-        ket_qua[A] = t / mau_so if mau_so else 0
+        ket_qua[A] = t / mau_so if mau_so else 0      # P(A|B) theo slide
         if verbose:
             print(f"   => Tử số = {t:.4f}  =>  P({A} | B) = {t:.4f} / {mau_so:.4f} = {ket_qua[A]:.4f}\n")
 
-    best = max(ket_qua, key=ket_qua.get)
+    best = max(ket_qua, key=ket_qua.get)              # chọn lớp có P(A|B) lớn nhất
     return best, ket_qua, tu_so
 
 
 # ---------- Chạy ----------
-# Quả cần phân loại: sửa theo tên cột và giá trị trong file CSV của bạn
-mau = {"Long": "Yes", "Sweet": "Yes", "Yellow": "Yes"}
+# Mẫu cần phân loại (sửa theo tên cột/giá trị trong file của bạn)
+mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
 best, ket_qua, tu_so = naive_bayes(mau, verbose=True)
 
 # Đối chiếu: mẫu số chuẩn hóa = tổng các tử số (tổng xác suất đúng bằng 1)
@@ -71,9 +73,9 @@ tong = sum(tu_so.values())
 print("===== KẾT QUẢ =====")
 print(f"{'A':<10}{'Theo slide':>12}{'Chuẩn hóa':>12}")
 for A in ket_qua:
-    print(f"{A:<10}{ket_qua[A]:>12.4f}{(tu_so[A] / tong if tong else 0):>12.4f}")
+    print(f"{str(A):<10}{ket_qua[A]:>12.4f}{(tu_so[A] / tong if tong else 0):>12.4f}")
 print("Quyết định:", best)
 
 # Độ chính xác trên tập huấn luyện
 pred = df.apply(lambda r: naive_bayes(r)[0], axis=1)
-print(f"Độ chính xác (train): {(pred == df[target]).mean():.2%}")
+print(f"\nĐộ chính xác (train): {(pred == df[target]).mean():.2%}")
