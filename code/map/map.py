@@ -2,55 +2,54 @@ import pandas as pd
 
 # ---------- Đọc & Tiền xử lý dữ liệu ----------
 DATA_FILE = "data/datatemplate.csv"
-df = pd.read_csv(DATA_FILE).dropna()   # Đọc bảng và loại bỏ dòng thiếu dữ liệu
-# df = df.drop(columns=["ID"])          # Bỏ cột ID/STT nếu có
-
-target = df.columns[-1]                 # Cột cuối cùng là nhãn (không gian giả thuyết H)
-attrs = list(df.columns[:-1])           # Các thuộc tính quan sát
+df = pd.read_csv(DATA_FILE).dropna()
+target = df.columns[-1]
+attrs = list(df.columns[:-1])
 
 
-# ---------- Xác suất tiên nghiệm P(h) ----------
-def prior(val):
-    return (df[target] == val).mean()
+# ---------- 1. Các hàm tính xác suất cơ bản ----------
+def P_h(h):
+    return (df[target] == h).mean()
 
 
-# ---------- Likelihood P(D_i | h) ----------
-def likelihood(a, v, val):
-    sub = df[df[target] == val]
+def P_Di_h(a, v, h):
+    sub = df[df[target] == h]
     return (sub[a] == v).sum() / len(sub)
 
 
-# ---------- Quyết định MAP: h_MAP = argmax P(h | D) ----------
+def P_D_h(D, h):
+    prod = 1.0
+    for a in attrs:
+        prod *= P_Di_h(a, D[a], h)
+    return prod
+
+
+# ---------- 2. Quyết định MAP: h_MAP = argmax P(h | D) ----------
 def map_predict(D):
     classes = list(df[target].unique())
     score = {}
-    h_map = {}
 
-    for j, val in enumerate(classes, 1):
-        h = f"h{j}"
-        h_map[h] = val
-        s = prior(val)
-        print(f"\nGiả thuyết {h}: P({h}) = {s:.4f}")
+    for j, h in enumerate(classes, 1):
+        print(f"\nGiả thuyết h{j}: P(h{j}) = {P_h(h):.4f}")
         for i, a in enumerate(attrs, 1):
-            p = likelihood(a, D[a], val)
-            print(f"   P(D{i} | {h}) = {p:.4f}")
-            s *= p                                   # nhân dồn: P(D|h) * P(h)
-        score[h] = s
-        print(f"   => P(D|{h}) * P({h}) = {s:.6f}")
+            print(f"   P(D{i} | h{j}) = {P_Di_h(a, D[a], h):.4f}")
+        score[h] = P_D_h(D, h) * P_h(h)
+        print(f"   => P(D|h{j}) * P(h{j}) = {score[h]:.6f}")
 
-    # Mẫu số P(D) = tổng các tử số (công thức xác suất toàn phần)
+    # Mẫu số: P(D) = Σ [P(D|h) * P(h)]
     P_D = sum(score.values())
     print(f"\n=> Xác suất mẫu P(D) = Σ [P(D|h) * P(h)] = {P_D:.6f}")
 
-    # Thay công thức tính P(h | D)
+    # Hậu nghiệm: P(h | D) = tử số / P(D)
     print("\n===== KẾT QUẢ P(h | D) =====")
     post = {}
-    for h, s in score.items():
-        post[h] = s / P_D
-        print(f"P({h} | D) = {s:.6f} / {P_D:.6f} = {post[h]:.4f}")
+    for j, h in enumerate(classes, 1):
+        post[h] = score[h] / P_D
+        print(f"P(h{j} | D) = {score[h]:.6f} / {P_D:.6f} = {post[h]:.4f}")
 
     best = max(post, key=post.get)
-    print(f"\nQuyết định MAP (h_MAP): {best} (lớp {h_map[best]})")
+    best_idx = classes.index(best) + 1
+    print(f"\nQuyết định MAP (h_MAP): h{best_idx}")
     return best, post
 
 
