@@ -31,11 +31,13 @@ def xac_suat_mau(D):
 # ---------- 2. Quyết định MAP: h_MAP = argmax P(h | D) ----------
 def hau_nghiem(D):
     mau_so = xac_suat_mau(D)
-    post = {}
+    post, labels = {}, {}
     for j, h in enumerate(df[target].unique(), 1):
         tu_so = kha_nang(D, h) * tien_nghiem(h)
         post[f"h{j}"] = tu_so / mau_so
-    return max(post, key=post.get), post
+        labels[f"h{j}"] = h
+    best = max(post, key=post.get)
+    return f"{best} = {labels[best]}", post
 
 
 # ---------- Chạy thử nghiệm ----------
