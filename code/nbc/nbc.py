@@ -5,77 +5,79 @@ DATA_FILE = "data/datatemplate.csv"
 df = pd.read_csv(DATA_FILE).dropna()   # Đọc bảng và loại bỏ dòng thiếu dữ liệu
 # df = df.drop(columns=["ID"])          # Bỏ cột ID/STT nếu có
 
-target = df.columns[-1]                 # Cột cuối cùng là nhãn cần dự đoán (lớp A)
-attrs = list(df.columns[:-1])           # Các tính chất B1, B2, ..., Bn
-values = {a: df[a].unique() for a in attrs}   # Mọi giá trị có thể của từng thuộc tính
+target = df.columns[-1]                 # Cột cuối cùng là nhãn cần dự đoán (lớp c)
+attrs = list(df.columns[:-1])           # Các thuộc tính đặc trưng (features)
+values = {a: df[a].unique() for a in attrs}   # Tập giá trị có thể của từng thuộc tính
 ALPHA = 0                               # 0: tính tay như slide; 1: làm trơn Laplace (tránh xác suất 0)
 
 
-# ---------- P(A): xác suất tiên nghiệm của lớp A ----------
-# P(A) = số mẫu thuộc A / tổng số mẫu
-def P_A(A):
-    return (df[target] == A).mean()
+# ---------- Xác suất tiên nghiệm: P(c) ----------
+# P(c) = số mẫu thuộc lớp c / tổng số mẫu
+def prior(c):
+    return (df[target] == c).mean()
 
 
-# ---------- P(Bi | A): xác suất Bi = v khi biết lớp A ----------
-# = (số mẫu A có Bi = v + ALPHA) / (số mẫu A + ALPHA * số giá trị của Bi)
-def P_B_A(b, v, A):
-    sub = df[df[target] == A]
-    k = len(values[b])
-    return ((sub[b] == v).sum() + ALPHA) / (len(sub) + ALPHA * k)
+# ---------- Khả năng (Likelihood): P(a = v | c) ----------
+# = (số mẫu lớp c có thuộc tính a = v + ALPHA) / (số mẫu lớp c + ALPHA * số giá trị của a)
+def likelihood(a, v, c):
+    sub = df[df[target] == c]
+    k = len(values[a])
+    return ((sub[a] == v).sum() + ALPHA) / (len(sub) + ALPHA * k)
 
 
-# ---------- P(Bi): xác suất riêng của Bi = v trên toàn bộ dữ liệu ----------
-def P_B(b, v):
-    return (df[b] == v).mean()
+# ---------- Xác suất biên (Evidence): P(a = v) ----------
+# Xác suất xuất hiện giá trị v của thuộc tính a trên toàn bộ dữ liệu
+def evidence(a, v):
+    return (df[a] == v).mean()
 
 
-# ---------- Naive Bayes theo công thức slide ----------
-# P(A|B) = [P(B1|A) x ... x P(Bn|A)] x P(A) / [P(B1) x ... x P(Bn)]
-def naive_bayes(x, verbose=False):
-    # Mẫu số: tích các P(Bi)
-    mau_so = 1
-    for b in attrs:
-        p = P_B(b, x[b])
+# ---------- Phân lớp Naive Bayes (NBC): P(c | x) ----------
+# P(c|x) = [P(c) * Π P(x_i | c)] / Π P(x_i)
+def nbc_predict(x, verbose=False):
+    # Mẫu số: tích các xác suất biên của từng thuộc tính Π P(x_i)
+    denominator = 1.0
+    for a in attrs:
+        p = evidence(a, x[a])
         if verbose:
-            print(f"P({b}={x[b]}) = {p:.4f}")
-        mau_so *= p
+            print(f"P({a}={x[a]}) = {p:.4f}")
+        denominator *= p
     if verbose:
-        print(f"=> Mẫu số = {mau_so:.4f}\n")
+        print(f"=> Mẫu số Π P(x_i) = {denominator:.4f}\n")
 
-    # Tử số của từng lớp, rồi chia cho mẫu số
-    tu_so, ket_qua = {}, {}
-    for A in df[target].unique():
-        t = P_A(A)                                    # bắt đầu từ P(A)
+    # Tử số của từng lớp: P(c) * Π P(x_i | c)
+    numerator, posterior = {}, {}
+    for c in df[target].unique():
+        num = prior(c)
         if verbose:
-            print(f"A = {A}: P({A}) = {t:.4f}")
-        for b in attrs:
-            p = P_B_A(b, x[b], A)
+            print(f"Lớp {c}: P({c}) = {num:.4f}")
+        for a in attrs:
+            p = likelihood(a, x[a], c)
             if verbose:
-                print(f"   P({b}={x[b]} | {A}) = {p:.4f}")
-            t *= p                                    # nhân dồn P(Bi | A)
-        tu_so[A] = t
-        ket_qua[A] = t / mau_so if mau_so else 0      # P(A|B) theo slide
+                print(f"   P({a}={x[a]} | {c}) = {p:.4f}")
+            num *= p
+        numerator[c] = num
+        posterior[c] = num / denominator if denominator else 0.0
         if verbose:
-            print(f"   => Tử số = {t:.4f}  =>  P({A} | B) = {t:.4f} / {mau_so:.4f} = {ket_qua[A]:.4f}\n")
+            print(f"   => Tử số = {num:.4f}  =>  P({c} | x) = {num:.4f} / {denominator:.4f} = {posterior[c]:.4f}\n")
 
-    best = max(ket_qua, key=ket_qua.get)              # chọn lớp có P(A|B) lớn nhất
-    return best, ket_qua, tu_so
+    best = max(posterior, key=posterior.get)          # chọn lớp có hậu nghiệm lớn nhất
+    return best, posterior, numerator
 
 
-# ---------- Chạy ----------
-# Mẫu cần phân loại (sửa theo tên cột/giá trị trong file của bạn)
-mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
-best, ket_qua, tu_so = naive_bayes(mau, verbose=True)
+# ---------- Chạy thử nghiệm ----------
+# Mẫu cần phân loại (quan sát mới)
+x_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
+best, posterior, numerator = nbc_predict(x_mau, verbose=True)
 
-# Đối chiếu: mẫu số chuẩn hóa = tổng các tử số (tổng xác suất đúng bằng 1)
-tong = sum(tu_so.values())
-print("===== KẾT QUẢ =====")
-print(f"{'A':<10}{'Theo slide':>12}{'Chuẩn hóa':>12}")
-for A in ket_qua:
-    print(f"{str(A):<10}{ket_qua[A]:>12.4f}{(tu_so[A] / tong if tong else 0):>12.4f}")
-print("Quyết định:", best)
+# Đối chiếu: Mẫu số chuẩn hóa = tổng các tử số (tổng xác suất đúng bằng 1)
+total = sum(numerator.values())
+print("===== KẾT QUẢ PHÂN LỚP NBC =====")
+print(f"{'Lớp':<10}{'Theo slide':>12}{'Chuẩn hóa':>12}")
+for c in posterior:
+    normalized = (numerator[c] / total) if total else 0.0
+    print(f"{str(c):<10}{posterior[c]:>12.4f}{normalized:>12.4f}")
+print("Quyết định NBC (c_NBC):", best)
 
-# Độ chính xác trên tập huấn luyện
-pred = df.apply(lambda r: naive_bayes(r)[0], axis=1)
+# Đánh giá độ chính xác trên tập huấn luyện
+pred = df.apply(lambda r: nbc_predict(r)[0], axis=1)
 print(f"\nĐộ chính xác (train): {(pred == df[target]).mean():.2%}")
