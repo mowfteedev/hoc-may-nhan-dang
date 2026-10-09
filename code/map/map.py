@@ -8,31 +8,31 @@ attrs = list(df.columns[:-1])
 
 
 # ---------- 1. Các hàm tính xác suất cơ bản ----------
-def P_h(h):
+def tien_nghiem(h):
     return (df[target] == h).mean()
 
 
-def P_Di_h(a, v, h):
+def dac_trung(a, v, h):
     sub = df[df[target] == h]
     return (sub[a] == v).sum() / len(sub)
 
 
-def P_D_h(D, h):
+def kha_nang(D, h):
     prod = 1.0
     for a in attrs:
-        prod *= P_Di_h(a, D[a], h)
+        prod *= dac_trung(a, D[a], h)
     return prod
 
 
+def xac_suat_mau(D):
+    return sum(kha_nang(D, h) * tien_nghiem(h) for h in df[target].unique())
+
+
 # ---------- 2. Quyết định MAP: h_MAP = argmax P(h | D) ----------
-def map_predict(D):
+def hau_nghiem(D):
     classes = list(df[target].unique())
-    # Tử số: P(D|h) * P(h)
-    score = {h: P_D_h(D, h) * P_h(h) for h in classes}
-    # Mẫu số: P(D) = Σ [P(D|h) * P(h)]
-    P_D = sum(score.values())
-    # Hậu nghiệm: P(h | D)
-    post = {f"h{j}": score[h] / P_D for j, h in enumerate(classes, 1)}
+    mau_so = xac_suat_mau(D)
+    post = {f"h{j}": (kha_nang(D, h) * tien_nghiem(h)) / mau_so for j, h in enumerate(classes, 1)}
     best = max(post, key=post.get)
     return best, post
 
@@ -41,7 +41,7 @@ def map_predict(D):
 D_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
 print(f"D = {D_mau}")
 
-best, post = map_predict(D_mau)
+best, post = hau_nghiem(D_mau)
 print("Completed!")
 for h, p in post.items():
     print(f"P({h} | D) = {p:.4f}")
