@@ -33,21 +33,15 @@ def id3(D, attrs):
                    for v in values[best] for sub in [D[D[best] == v]]}}
 
 
-# ---------- In cây theo chuẩn tree thư mục ----------
-def show(tree, prefix=""):
+# ---------- In sơ đồ cây ----------
+def show(tree, indent=""):
     a = next(iter(tree))
-    if not prefix:
-        print(a)
-    items = list(tree[a].items())
-    for i, (v, sub) in enumerate(items):
-        is_last = (i == len(items) - 1)
-        branch = "└── " if is_last else "├── "
-        next_prefix = prefix + ("    " if is_last else "│   ")
+    for v, sub in tree[a].items():
         if isinstance(sub, dict):
-            print(f"{prefix}{branch}{v} ──▶ {next(iter(sub))}")
-            show(sub, next_prefix)
+            print(f"{indent}[{a}] = {v}:")
+            show(sub, indent + "    ")
         else:
-            print(f"{prefix}{branch}{v} ──▶ {sub}")
+            print(f"{indent}[{a}] = {v}  ──▶  {sub}")
 
 
 # ---------- Dự đoán ----------
