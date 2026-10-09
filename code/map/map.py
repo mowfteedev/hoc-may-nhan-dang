@@ -30,7 +30,11 @@ def xac_suat_mau(D):
 
 # ---------- 2. Quyết định MAP: h_MAP = argmax P(h | D) ----------
 def hau_nghiem(D):
-    post = {f"h{j}": (kha_nang(D, h) * tien_nghiem(h)) / xac_suat_mau(D) for j, h in enumerate(df[target].unique(), 1)}
+    mau_so = xac_suat_mau(D)
+    post = {}
+    for j, h in enumerate(df[target].unique(), 1):
+        tu_so = kha_nang(D, h) * tien_nghiem(h)
+        post[f"h{j}"] = tu_so / mau_so
     return max(post, key=post.get), post
 
 
