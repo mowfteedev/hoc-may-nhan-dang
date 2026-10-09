@@ -61,12 +61,18 @@ def predict(tree, D):
 # ---------- Chạy ----------
 tree = id3(df, attrs)
 
-print("\n===== CÂY QUYẾT ĐỊNH =====")
+print("\n===== SƠ ĐỒ CÂY =====")
 show(tree)
 
-# Độ chính xác & Dự đoán mẫu mới
+print("\n===== KẾT QUẢ ĐÁNH GIÁ & DỰ ĐOÁN =====")
+# Độ chính xác trên tập dữ liệu huấn luyện
 pred = df.apply(lambda r: predict(tree, r), axis=1)
-print(f"\nĐộ chính xác: {(pred == df[target]).mean():.2%}")
+accuracy = (pred == df[target]).mean()
+correct = (pred == df[target]).sum()
+print(f"Độ chính xác trên tập huấn luyện: {accuracy:.2%} ({correct}/{len(df)} mẫu đúng)")
 
+# Dự đoán cho mẫu dữ liệu mới
 D_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
-print("Quyết định:", predict(tree, D_mau))
+ket_qua = predict(tree, D_mau)
+print(f"Mẫu quan sát mới D: {D_mau}")
+print(f"Quyết định dự đoán nhãn cho mẫu D: {ket_qua}")
