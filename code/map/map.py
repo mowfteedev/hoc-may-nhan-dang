@@ -43,7 +43,8 @@ D_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong
 print(f"D = {D_mau}")
 
 best, post = hau_nghiem(D_mau)
-print("Completed!")
+print("Completed!\n" + "-" * 35)
 for h, p in post.items():
-    print(f"P({h} | D) = {p:.4f}")
-print(f"Quyết định MAP (h_MAP): {best}")
+    print(f"P({h}|D) = {p:.4f}")
+print("-" * 35)
+print(f"=> Quyết định MAP (h_MAP): {best}")
