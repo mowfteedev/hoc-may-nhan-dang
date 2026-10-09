@@ -1,4 +1,3 @@
-from math import prod
 import pandas as pd
 
 # ---------- Đọc & Tiền xử lý dữ liệu ----------
@@ -14,11 +13,15 @@ def tien_nghiem(h):
 
 
 def dac_trung(a, v, h):
-    return ((df[target] == h) & (df[a] == v)).sum() / (df[target] == h).sum()
+    sub = df[df[target] == h]
+    return (sub[a] == v).sum() / len(sub)
 
 
 def kha_nang(D, h):
-    return prod(dac_trung(a, D[a], h) for a in attrs)
+    prod = 1.0
+    for a in attrs:
+        prod *= dac_trung(a, D[a], h)
+    return prod
 
 
 def xac_suat_mau(D):
