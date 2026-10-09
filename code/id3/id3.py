@@ -8,18 +8,17 @@ target = df.columns[-1]
 attrs = list(df.columns[:-1])
 
 
-# ---------- 1. Entropy ----------
+# ---------- 1. Các hàm cơ bản ----------
 def entropy(D):
     p = D[target].value_counts(normalize=True)
     return -sum(x * math.log2(x) for x in p if x > 0)
 
 
-# ---------- 2. Gain ----------
 def gain(D, a):
     return entropy(D) - sum(len(sub) / len(D) * entropy(sub) for _, sub in D.groupby(a))
 
 
-# ---------- 3. Quyết định (ID3) ----------
+# ---------- 2. Quyết định (ID3) ----------
 def id3(D, attrs):
     if D[target].nunique() == 1:
         return D[target].iloc[0]
@@ -36,7 +35,6 @@ def id3(D, attrs):
     return {best: tree}
 
 
-# ---------- 4. In sơ đồ cây ----------
 def show(tree, indent=""):
     a = next(iter(tree))
     for v, sub in tree[a].items():
@@ -47,7 +45,6 @@ def show(tree, indent=""):
             print(f"{indent}[{a}] = {v}  ──▶  {sub}")
 
 
-# ---------- 5. Dự đoán ----------
 def predict(tree, D):
     if not isinstance(tree, dict):
         return tree
