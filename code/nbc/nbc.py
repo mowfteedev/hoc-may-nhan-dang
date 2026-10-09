@@ -42,7 +42,7 @@ def nbc_predict(x, verbose=False):
         print(f"=> Mẫu số Π P(x_i) = {denominator:.4f}\n")
 
     # Tử số của từng lớp: P(c) * Π P(x_i | c)
-    numerator, posterior = {}, {}
+    posterior = {}
     for c in df[target].unique():
         num = prior(c)
         if verbose:
@@ -52,27 +52,23 @@ def nbc_predict(x, verbose=False):
             if verbose:
                 print(f"   P({a}={x[a]} | {c}) = {p:.4f}")
             num *= p
-        numerator[c] = num
-        posterior[c] = num / denominator if denominator else 0.0
+        post = num / denominator if denominator else 0.0
+        posterior[c] = post
         if verbose:
-            print(f"   => Tử số = {num:.4f}  =>  P({c} | x) = {num:.4f} / {denominator:.4f} = {posterior[c]:.4f}\n")
+            print(f"   => Tử số = {num:.4f}  =>  P({c} | x) = {num:.4f} / {denominator:.4f} = {post:.4f}\n")
 
     best = max(posterior, key=posterior.get)          # chọn lớp có hậu nghiệm lớn nhất
-    return best, posterior, numerator
+    return best, posterior
 
 
 # ---------- Chạy thử nghiệm ----------
 # Mẫu cần phân loại (quan sát mới)
 x_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
-best, posterior, numerator = nbc_predict(x_mau, verbose=True)
+best, posterior = nbc_predict(x_mau, verbose=True)
 
-# Đối chiếu: Mẫu số chuẩn hóa = tổng các tử số (tổng xác suất đúng bằng 1)
-total = sum(numerator.values())
 print("===== KẾT QUẢ PHÂN LỚP NBC =====")
-print(f"{'Lớp':<10}{'Theo slide':>12}{'Chuẩn hóa':>12}")
-for c in posterior:
-    normalized = (numerator[c] / total) if total else 0.0
-    print(f"{str(c):<10}{posterior[c]:>12.4f}{normalized:>12.4f}")
+for c, p in posterior.items():
+    print(f"P({c} | x) = {p:.4f}")
 print("Quyết định NBC (c_NBC):", best)
 
 # Đánh giá độ chính xác trên tập huấn luyện
