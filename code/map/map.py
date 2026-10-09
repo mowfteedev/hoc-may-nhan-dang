@@ -1,53 +1,71 @@
-import os
 import pandas as pd
 
-# ---------- Đọc & Tiền xử lý dữ liệu ----------
+# ---------- Dữ liệu ----------
 DATA_FILE = "data/datatemplate.csv"
-df = pd.read_csv(DATA_FILE).dropna()   # Đọc bảng và loại bỏ dòng thiếu dữ liệu
-# df = df.drop(columns=["ID"])          # Bỏ cột ID/STT nếu có
-
-target = df.columns[-1]                 # Cột cuối cùng là nhãn (không gian giả thuyết H)
-attrs = list(df.columns[:-1])           # Các thuộc tính quan sát
-ALPHA = 0                               # 0: tính tay như sách; 1: làm trơn Laplace (tránh xác suất 0)
+df = pd.read_csv(DATA_FILE).dropna()
+target, attrs = df.columns[-1], list(df.columns[:-1])
+values = {a: df[a].unique() for a in attrs}
+ALPHA = 0                               # 0: tính tay như slide; 1: làm trơn Laplace
 
 
-# ---------- Xác suất tiên nghiệm P(h) ----------
-def prior(h):
+# ---------- 1. Tiên nghiệm P(h) ----------
+def P_h(h):
     return (df[target] == h).mean()
 
 
-# ---------- Likelihood P(d_i | h) ----------
-# = (số mẫu của giả thuyết h có thuộc tính a = v) / (số mẫu của giả thuyết h)
-def likelihood(a, v, h):
+# ---------- 2. Khả năng P(d_i | h) ----------
+def P_di_h(a, v, h):
     sub = df[df[target] == h]
-    k = df[a].nunique()                 # số giá trị của thuộc tính (dùng cho Laplace)
+    k = len(values[a])
     return ((sub[a] == v).sum() + ALPHA) / (len(sub) + ALPHA * k)
 
 
-# ---------- Quyết định MAP: h_MAP = argmax P(D|h) * P(h) ----------
-def map_predict(D):
+# ---------- 3. Quyết định MAP: h_MAP = argmax P(h) * Π P(d_i | h) ----------
+def map_predict(D, verbose=False):
     score = {}
     for h in df[target].unique():
-        s = prior(h)
-        print(f"\nGiả thuyết {h}: P({h}) = {s:.4f}")
+        s = P_h(h)
+        if verbose:
+            print(f"Giả thuyết {h}: P({h}) = {s:.4f}")
         for a in attrs:
-            p = likelihood(a, D[a], h)
-            print(f"   P({a}={D[a]} | {h}) = {p:.4f}")
-            s *= p                                   # nhân dồn: P(D|h) * P(h)
+            p = P_di_h(a, D[a], h)
+            if verbose:
+                print(f"   P({a}={D[a]} | {h}) = {p:.4f}")
+            s *= p
         score[h] = s
-        print(f"   => P({h}) * Π P(d_i|{h}) = {s:.6f}")
+        if verbose:
+            print(f"   => P({h}) * Π P(d_i|{h}) = {s:.6f}\n")
 
     total = sum(score.values())
-    post = {h: s / total for h, s in score.items()}  # chuẩn hóa thành P(h | D)
-    best = max(post, key=post.get)                   # argmax
-    return best, post
+    post = {h: s / total for h, s in score.items()} if total else {h: 0 for h in score}
+    best = max(post, key=post.get)
+    return best, post, score
 
 
-# ---------- Chạy ----------
+# ==============================================================
+# CHẠY VÀ ĐÁNH GIÁ (ĐÚNG 4 MỤC RÕ RÀNG)
+# ==============================================================
+
+# 1. Tiên nghiệm P(h)
+print("===== 1. XÁC SUẤT TIÊN NGHIỆM P(h) =====")
+for h in df[target].unique():
+    print(f"P({h}) = {P_h(h):.4f}")
+
+# 2. Chi tiết tính toán cho mẫu thử nghiệm D_mau
+print("\n===== 2. CHI TIẾT TÍNH TOÁN CHO MẪU D =====")
 D_mau = {"Outlook": "Sunny", "Temp": "Cool", "Humidity": "High", "Wind": "Strong"}
-best, post = map_predict(D_mau)
+print(f"Mẫu quan sát D: {D_mau}\n")
+best, post, score = map_predict(D_mau, verbose=True)
 
-print("\n===== KẾT QUẢ =====")
+# 3. Bảng xác suất hậu nghiệm
+print("===== 3. BẢNG XÁC SUẤT HẬU NGHIỆM P(h | D) =====")
 for h, p in post.items():
-    print(f"P({h} | D) = {p:.4f}")
-print("Quyết định MAP (h_MAP):", best)
+    print(f"P({h} | D) = {p:.4f} (Điểm số chưa chuẩn hóa: {score[h]:.6f})")
+
+# 4. Độ chính xác và Quyết định
+print("\n===== 4. ĐỘ CHÍNH XÁC VÀ QUYẾT ĐỊNH =====")
+pred = df.apply(lambda r: map_predict(r)[0], axis=1)
+accuracy = (pred == df[target]).mean()
+correct = (pred == df[target]).sum()
+print(f"Độ chính xác trên tập huấn luyện: {accuracy:.2%} ({correct}/{len(df)} mẫu đúng)")
+print(f"Quyết định MAP cho mẫu D (h_MAP): {best}")
