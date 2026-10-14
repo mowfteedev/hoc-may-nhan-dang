@@ -1,30 +1,30 @@
 # ==============================================================
 # TC1: KHAI BÁO THƯ VIỆN SỬ DỤNG CHO THUẬT TOÁN (0.5đ)
 # ==============================================================
-import io
 import math
 import pandas as pd
 
 # ==============================================================
 # TC2: TẠO DỮ LIỆU TRAIN RIÊNG CHO BÀI TOÁN (1.5đ)
 # ==============================================================
-train_data = """Ngay,Tiet_troi,Nhiet_do,Do_am,Gio,Choicau
-1,Nang,Nong,Cao,Yeu,Khong
-2,Nang,Nong,Cao,Manh,Khong
-3,Nhieu_may,Nong,Cao,Yeu,Co
-4,Mua,Mat,Cao,Yeu,Co
-5,Mua,Lanh,Thuong,Yeu,Co
-6,Mua,Lanh,Thuong,Manh,Khong
-7,Nhieu_may,Lanh,Thuong,Manh,Co
-8,Nang,Mat,Cao,Yeu,Khong
-9,Nang,Lanh,Thuong,Yeu,Co
-10,Mua,Mat,Thuong,Yeu,Co
-11,Nang,Mat,Thuong,Manh,Co
-12,Nhieu_may,Mat,Cao,Manh,Co
-13,Nhieu_may,Nong,Thuong,Yeu,Co
-14,Mua,Mat,Cao,Manh,Khong"""
+dulieu = [
+    {"Ngay": 1, "Tiet_troi": "Nang", "Nhiet_do": "Nong", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Khong"},
+    {"Ngay": 2, "Tiet_troi": "Nang", "Nhiet_do": "Nong", "Do_am": "Cao", "Gio": "Manh", "Choicau": "Khong"},
+    {"Ngay": 3, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Nong", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Co"},
+    {"Ngay": 4, "Tiet_troi": "Mua", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Co"},
+    {"Ngay": 5, "Tiet_troi": "Mua", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
+    {"Ngay": 6, "Tiet_troi": "Mua", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Manh", "Choicau": "Khong"},
+    {"Ngay": 7, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Manh", "Choicau": "Co"},
+    {"Ngay": 8, "Tiet_troi": "Nang", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Khong"},
+    {"Ngay": 9, "Tiet_troi": "Nang", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
+    {"Ngay": 10, "Tiet_troi": "Mua", "Nhiet_do": "Mat", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
+    {"Ngay": 11, "Tiet_troi": "Nang", "Nhiet_do": "Mat", "Do_am": "Thuong", "Gio": "Manh", "Choicau": "Co"},
+    {"Ngay": 12, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Manh", "Choicau": "Co"},
+    {"Ngay": 13, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Nong", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
+    {"Ngay": 14, "Tiet_troi": "Mua", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Manh", "Choicau": "Khong"},
+]
 
-df = pd.read_csv(io.StringIO(train_data)).iloc[:, 1:]
+df = pd.DataFrame(dulieu).iloc[:, 1:]
 target = df.columns[-1]
 attrs = list(df.columns[:-1])
 
