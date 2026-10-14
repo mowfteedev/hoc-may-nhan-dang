@@ -62,7 +62,7 @@ print(f"Entropy tổng H(D) = {H_D:.4f} ({counts_str})")
 print("-" * 35)
 
 for a in attrs:
-    print(f"Gain(D, {a:<9}) = {gain(df, a):.4f}")
+    print(f"Gain(D, {a}) = {gain(df, a):.4f}")
 best_root = max(attrs, key=lambda a: gain(df, a))
 print(f"=> Nút gốc (Gain max): {best_root} = {gain(df, best_root):.4f}")
 print("-" * 35)
