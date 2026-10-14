@@ -35,14 +35,25 @@ def id3(D, attrs):
     return {best: tree}
 
 
-def show(tree, indent=""):
+def show(tree, prefix=""):
     a = next(iter(tree))
-    for v, sub in tree[a].items():
+    if not prefix:
+        print(a)
+    items = list(tree[a].items())
+    for i, (v, sub) in enumerate(items):
+        branch = "└── " if i == len(items) - 1 else "├── "
+        next_prefix = prefix + ("    " if i == len(items) - 1 else "│   ")
         if isinstance(sub, dict):
-            print(f"{indent}[{a}] = {v}:")
-            show(sub, indent + "    ")
+            print(f"{prefix}{branch}{v}")
+            child_a = next(iter(sub))
+            for j, (cv, csub) in enumerate(sub[child_a].items()):
+                c_branch = "└── " if j == len(sub[child_a]) - 1 else "├── "
+                if isinstance(csub, dict):
+                    show({f"{child_a} = {cv}": csub}, next_prefix)
+                else:
+                    print(f"{next_prefix}{c_branch}{child_a} = {cv} -> {csub}")
         else:
-            print(f"{indent}[{a}] = {v}  ──▶  {sub}")
+            print(f"{prefix}{branch}{v} -> {sub}")
 
 
 def predict(tree, D):
