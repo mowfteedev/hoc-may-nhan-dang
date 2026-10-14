@@ -24,9 +24,7 @@ train_data = """Ngay,Tiet_troi,Nhiet_do,Do_am,Gio,Choicau
 13,Nhieu_may,Nong,Thuong,Yeu,Co
 14,Mua,Mat,Cao,Manh,Khong"""
 
-df = pd.read_csv(io.StringIO(train_data))
-if "Ngay" in df.columns:
-    df = df.drop(columns=["Ngay"])
+df = pd.read_csv(io.StringIO(train_data)).iloc[:, 1:]
 target = df.columns[-1]
 attrs = list(df.columns[:-1])
 
@@ -46,15 +44,22 @@ D_test = {"Tiet_troi": "Nang", "Nhiet_do": "Lanh", "Do_am": "Cao", "Gio": "Manh"
 # TC5: TÍNH THAM SỐ THỨ NHẤT CỦA THUẬT TOÁN - ENTROPY H(D) (1.5đ)
 # ==============================================================
 def entropy(D):
-    p = D[target].value_counts(normalize=True)
-    return -sum(x * math.log2(x) for x in p if x > 0)
+    h = 0.0
+    for count in D[target].value_counts():
+        p = count / len(D)
+        h -= p * math.log2(p)
+    return h
 
 
 # ==============================================================
 # TC6: TÍNH THAM SỐ THỨ HAI CỦA THUẬT TOÁN - GAIN & DỰNG CÂY (1.5đ)
 # ==============================================================
 def gain(D, a):
-    return entropy(D) - sum(len(sub) / len(D) * entropy(sub) for _, sub in D.groupby(a))
+    g = entropy(D)
+    for v in D[a].unique():
+        D_v = D[D[a] == v]
+        g -= (len(D_v) / len(D)) * entropy(D_v)
+    return g
 
 
 def id3(D, attrs):
@@ -68,8 +73,8 @@ def id3(D, attrs):
 
     tree = {}
     for v in df[best].unique():
-        sub = D[D[best] == v]
-        tree[v] = id3(sub, rest) if len(sub) else D[target].mode()[0]
+        D_v = D[D[best] == v]
+        tree[v] = id3(D_v, rest) if len(D_v) else D[target].mode()[0]
     return {best: tree}
 
 
