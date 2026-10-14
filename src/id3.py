@@ -1,41 +1,20 @@
-# ==============================================================
-# TC1: KHAI BÁO THƯ VIỆN SỬ DỤNG CHO THUẬT TOÁN (0.5đ)
-# ==============================================================
 import os
 import math
 import pandas as pd
 
-# ==============================================================
-# TC2: ĐỌC DỮ LIỆU TRAIN TỪ FILE CSV (1.5đ)
-# ==============================================================
 DATA_FILE = "data/data.csv" if os.path.exists("data/data.csv") else os.path.join(os.path.dirname(__file__), "..", "data", "data.csv")
 df = pd.read_csv(DATA_FILE)
 target = df.columns[-1]
 attrs = list(df.columns[:-1])
 
-# ==============================================================
-# TC3: TẠO DỮ LIỆU TEST (1.0đ)
-# ==============================================================
 D_test = {"Tiet_troi": "Nang", "Nhiet_do": "Lanh", "Do_am": "Cao", "Gio": "Manh"}
 
 
-# ==============================================================
-# TC4: VIẾT ĐÚNG CÔNG THỨC SỬ DỤNG CHO THUẬT TOÁN (1.0đ)
-# Công thức Entropy: H(D) = - Σ p * log2(p)
-# Công thức Gain: Gain(D, a) = H(D) - Σ (|D_v| / |D|) * H(D_v)
-# ==============================================================
-
-# ==============================================================
-# TC5: TÍNH THAM SỐ THỨ NHẤT CỦA THUẬT TOÁN - ENTROPY H(D) (1.5đ)
-# ==============================================================
 def entropy(D):
     p = D[target].value_counts(normalize=True)
     return -sum(x * math.log2(x) for x in p if x > 0)
 
 
-# ==============================================================
-# TC6: TÍNH THAM SỐ THỨ HAI CỦA THUẬT TOÁN - GAIN & DỰNG CÂY (1.5đ)
-# ==============================================================
 def gain(D, a):
     return entropy(D) - sum(len(sub) / len(D) * entropy(sub) for _, sub in D.groupby(a))
 
@@ -73,9 +52,6 @@ def predict(tree, D):
     return predict(tree[a].get(D[a], df[target].mode()[0]), D)
 
 
-# ==============================================================
-# TC8: DỰNG CÂY VÀ TÍNH THAM SỐ (1.0đ)
-# ==============================================================
 tree = id3(df, attrs)
 print("Completed!\n" + "-" * 35)
 
@@ -94,9 +70,6 @@ print("-" * 35)
 show(tree)
 print("-" * 35)
 
-# ==============================================================
-# TC7 & TC9: NHẬP DỮ LIỆU TEST VÀ DỰ ĐOÁN QUYẾT ĐỊNH (2.0đ)
-# ==============================================================
 D = D_test
 print(f"D = {D}")
 print(f"=> Quyết định ID3: {predict(tree, D)}")
