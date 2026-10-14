@@ -1,30 +1,15 @@
 # ==============================================================
 # TC1: KHAI BÁO THƯ VIỆN SỬ DỤNG CHO THUẬT TOÁN (0.5đ)
 # ==============================================================
-import io
+import os
 import math
 import pandas as pd
 
 # ==============================================================
-# TC2: TẠO DỮ LIỆU TRAIN RIÊNG CHO BÀI TOÁN (1.5đ)
+# TC2: ĐỌC DỮ LIỆU TRAIN TỪ FILE CSV (1.5đ)
 # ==============================================================
-train_data = """Tiet_troi,Nhiet_do,Do_am,Gio,Choicau
-Nang,Nong,Cao,Yeu,Khong
-Nang,Nong,Cao,Manh,Khong
-Nhieu_may,Nong,Cao,Yeu,Co
-Mua,Mat,Cao,Yeu,Co
-Mua,Lanh,Thuong,Yeu,Co
-Mua,Lanh,Thuong,Manh,Khong
-Nhieu_may,Lanh,Thuong,Manh,Co
-Nang,Mat,Cao,Yeu,Khong
-Nang,Lanh,Thuong,Yeu,Co
-Mua,Mat,Thuong,Yeu,Co
-Nang,Mat,Thuong,Manh,Co
-Nhieu_may,Mat,Cao,Manh,Co
-Nhieu_may,Nong,Thuong,Yeu,Co
-Mua,Mat,Cao,Manh,Khong"""
-
-df = pd.read_csv(io.StringIO(train_data))
+DATA_FILE = "data/data.csv" if os.path.exists("data/data.csv") else os.path.join(os.path.dirname(__file__), "..", "data", "data.csv")
+df = pd.read_csv(DATA_FILE)
 target = df.columns[-1]
 attrs = list(df.columns[:-1])
 
