@@ -1,31 +1,32 @@
 # ==============================================================
 # TC1: KHAI BÁO THƯ VIỆN SỬ DỤNG CHO THUẬT TOÁN (0.5đ)
 # ==============================================================
+import io
 import math
-from collections import defaultdict
+import pandas as pd
 
 # ==============================================================
 # TC2: TẠO DỮ LIỆU TRAIN RIÊNG CHO BÀI TOÁN (1.5đ)
 # ==============================================================
-dulieu = [
-    {"Ngay": 1, "Tiet_troi": "Nang", "Nhiet_do": "Nong", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Khong"},
-    {"Ngay": 2, "Tiet_troi": "Nang", "Nhiet_do": "Nong", "Do_am": "Cao", "Gio": "Manh", "Choicau": "Khong"},
-    {"Ngay": 3, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Nong", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Co"},
-    {"Ngay": 4, "Tiet_troi": "Mua", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Co"},
-    {"Ngay": 5, "Tiet_troi": "Mua", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
-    {"Ngay": 6, "Tiet_troi": "Mua", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Manh", "Choicau": "Khong"},
-    {"Ngay": 7, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Manh", "Choicau": "Co"},
-    {"Ngay": 8, "Tiet_troi": "Nang", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Yeu", "Choicau": "Khong"},
-    {"Ngay": 9, "Tiet_troi": "Nang", "Nhiet_do": "Lanh", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
-    {"Ngay": 10, "Tiet_troi": "Mua", "Nhiet_do": "Mat", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
-    {"Ngay": 11, "Tiet_troi": "Nang", "Nhiet_do": "Mat", "Do_am": "Thuong", "Gio": "Manh", "Choicau": "Co"},
-    {"Ngay": 12, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Manh", "Choicau": "Co"},
-    {"Ngay": 13, "Tiet_troi": "Nhieu_may", "Nhiet_do": "Nong", "Do_am": "Thuong", "Gio": "Yeu", "Choicau": "Co"},
-    {"Ngay": 14, "Tiet_troi": "Mua", "Nhiet_do": "Mat", "Do_am": "Cao", "Gio": "Manh", "Choicau": "Khong"},
-]
+train_data = """Tiet_troi,Nhiet_do,Do_am,Gio,Choicau
+Nang,Nong,Cao,Yeu,Khong
+Nang,Nong,Cao,Manh,Khong
+Nhieu_may,Nong,Cao,Yeu,Co
+Mua,Mat,Cao,Yeu,Co
+Mua,Lanh,Thuong,Yeu,Co
+Mua,Lanh,Thuong,Manh,Khong
+Nhieu_may,Lanh,Thuong,Manh,Co
+Nang,Mat,Cao,Yeu,Khong
+Nang,Lanh,Thuong,Yeu,Co
+Mua,Mat,Thuong,Yeu,Co
+Nang,Mat,Thuong,Manh,Co
+Nhieu_may,Mat,Cao,Manh,Co
+Nhieu_may,Nong,Thuong,Yeu,Co
+Mua,Mat,Cao,Manh,Khong"""
 
-target = "Choicau"
-attrs = ["Tiet_troi", "Nhiet_do", "Do_am", "Gio"]
+df = pd.read_csv(io.StringIO(train_data))
+target = df.columns[-1]
+attrs = list(df.columns[:-1])
 
 # ==============================================================
 # TC3: TẠO DỮ LIỆU TEST (1.0đ)
@@ -43,45 +44,30 @@ D_test = {"Tiet_troi": "Nang", "Nhiet_do": "Lanh", "Do_am": "Cao", "Gio": "Manh"
 # TC5: TÍNH THAM SỐ THỨ NHẤT CỦA THUẬT TOÁN - ENTROPY H(D) (1.5đ)
 # ==============================================================
 def entropy(D):
-    if not D:
-        return 0.0
-    dem = defaultdict(int)
-    for m in D:
-        dem[m[target]] += 1
-    tong = len(D)
-    return -sum((c / tong) * math.log2(c / tong) for c in dem.values() if c > 0)
+    p = D[target].value_counts(normalize=True)
+    return -sum(x * math.log2(x) for x in p if x > 0)
 
 
 # ==============================================================
 # TC6: TÍNH THAM SỐ THỨ HAI CỦA THUẬT TOÁN - GAIN & DỰNG CÂY (1.5đ)
 # ==============================================================
 def gain(D, a):
-    nhom = defaultdict(list)
-    for m in D:
-        nhom[m[a]].append(m)
-    tong = len(D)
-    return entropy(D) - sum((len(D_v) / tong) * entropy(D_v) for D_v in nhom.values())
+    return entropy(D) - sum(len(sub) / len(D) * entropy(sub) for _, sub in D.groupby(a))
 
 
-def id3(D, current_attrs):
-    nhan = [m[target] for m in D]
-    nhan_da_so = max(set(nhan), key=nhan.count)
+def id3(D, attrs):
+    if D[target].nunique() == 1:
+        return D[target].iloc[0]
+    if not attrs:
+        return D[target].mode()[0]
 
-    # Điều kiện dừng: Thuần nhất hoặc hết thuộc tính chia
-    if len(set(nhan)) == 1:
-        return nhan[0]
-    if not current_attrs:
-        return nhan_da_so
-
-    # Chọn thuộc tính có Gain lớn nhất
-    best = max(current_attrs, key=lambda a: gain(D, a))
-    rest = [a for a in current_attrs if a != best]
+    best = max(attrs, key=lambda a: gain(D, a))
+    rest = [a for a in attrs if a != best]
 
     tree = {}
-    gia_tri_goc = list(dict.fromkeys(m[best] for m in dulieu))
-    for v in gia_tri_goc:
-        D_v = [m for m in D if m[best] == v]
-        tree[v] = id3(D_v, rest) if D_v else nhan_da_so
+    for v in df[best].unique():
+        sub = D[D[best] == v]
+        tree[v] = id3(sub, rest) if len(sub) else D[target].mode()[0]
     return {best: tree}
 
 
@@ -99,27 +85,25 @@ def predict(tree, D):
     if not isinstance(tree, dict):
         return tree
     a = next(iter(tree))
-    return predict(tree[a].get(D.get(a)), D)
+    return predict(tree[a].get(D[a], df[target].mode()[0]), D)
 
 
 # ==============================================================
 # TC8: DỰNG CÂY VÀ TÍNH THAM SỐ (1.0đ)
 # ==============================================================
-tree = id3(dulieu, attrs)
+tree = id3(df, attrs)
 print("Completed!\n" + "-" * 35)
 
-H_D = entropy(dulieu)
-dem_nhan = defaultdict(int)
-for m in dulieu:
-    dem_nhan[m[target]] += 1
-counts_str = ", ".join(f"{cnt} {lbl}" for lbl, cnt in sorted(dem_nhan.items(), key=lambda x: -x[1]))
+H_D = entropy(df)
+counts = df[target].value_counts().to_dict()
+counts_str = ", ".join(f"{cnt} {lbl}" for lbl, cnt in counts.items())
 print(f"Entropy tổng H(D) = {H_D:.4f} ({counts_str})")
 print("-" * 35)
 
 for a in attrs:
-    print(f"Gain(D, {a:<9}) = {gain(dulieu, a):.4f}")
-best_root = max(attrs, key=lambda a: gain(dulieu, a))
-print(f"=> Nút gốc (Gain max): {best_root} = {gain(dulieu, best_root):.4f}")
+    print(f"Gain(D, {a:<9}) = {gain(df, a):.4f}")
+best_root = max(attrs, key=lambda a: gain(df, a))
+print(f"=> Nút gốc (Gain max): {best_root} = {gain(df, best_root):.4f}")
 print("-" * 35)
 
 show(tree)
